@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Confirmaciones — Karen &amp; Daniel</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Montserrat:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body style="background:var(--ivory);">
+
+<div class="admin-wrap">
+  <h1>Confirmaciones</h1>
+  <p class="admin-sub">Karen &amp; Daniel · 14 de noviembre de 2026 — esta página lee las confirmaciones guardadas en este navegador. Para ver TODAS las confirmaciones de todos tus invitados desde cualquier dispositivo, conecta el formulario a Google Sheets (ver instrucciones que te dio Claude).</p>
+
+  <div class="admin-stats" id="stats"></div>
+
+  <div class="novios-box glass">
+    <h2>Para Karen y Daniel</h2>
+    <p>Desde aquí pueden descargar toda la información compilada de las confirmaciones de sus invitados, lista para revisar en Excel o compartir con el lugar del evento y el catering.</p>
+    <p style="margin-top:10px;">Para enviar la invitación personalizada a cada invitado (con su nombre y su cantidad de acompañantes ya cargados), usa el archivo <code>enlaces-invitados.csv</code> que te entregó Claude — cada fila trae el enlace único de esa persona o familia, listo para copiar y enviar por WhatsApp. Reemplaza <code>TU-DOMINIO-AQUI.com</code> por el dominio real donde publiques el sitio.</p>
+    <div class="admin-actions">
+      <button class="btn btn--gold" id="btn-export">Descargar todo (CSV)</button>
+      <button class="btn" id="btn-clear">Borrar datos locales</button>
+    </div>
+  </div>
+
+  <div id="table-wrap"></div>
+</div>
+
+<script src="guests-data.js"></script>
+<script src="guests-remote.js"></script>
+<script>
+const LS_KEY = "rsvps_karen_daniel";
+document.addEventListener("guest-list-updated", render);
+
+function cargarConfirmaciones(){
+  return JSON.parse(localStorage.getItem(LS_KEY) || "[]");
+}
+
+function formatearFecha(iso){
+  const d = new Date(iso);
+  return d.toLocaleString("es-CO", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+}
+
+function render(){
+  const datos = cargarConfirmaciones().sort((a,b) => new Date(b.fechaConfirmacion) - new Date(a.fechaConfirmacion));
+
+  const total = GUEST_LIST.length;
+  const confirmados = datos.filter(d => d.asistencia === "si").length;
+  const noAsisten = datos.filter(d => d.asistencia === "no").length;
+  const pendientes = total - datos.length;
+  const conAcompanante = datos.filter(d => d.llevaAcompanante).length;
+
+  document.getElementById("stats").innerHTML = `
+    <div class="stat"><div class="n">${confirmados}</div><div class="l">Confirmados</div></div>
+    <div class="stat"><div class="n">${noAsisten}</div><div class="l">No asisten</div></div>
+    <div class="stat"><div class="n">${pendientes}</div><div class="l">Pendientes</div></div>
+    <div class="stat"><div class="n">${conAcompanante}</div><div class="l">Con acompañante</div></div>
+  `;
+
+  const wrap = document.getElementById("table-wrap");
+
+  if (datos.length === 0) {
+    wrap.innerHTML = `<div class="empty-state">Todavía no hay confirmaciones registradas en este navegador.</div>`;
+    return;
+  }
+
+  const filas = datos.map(d => `
+    <tr>
+      <td>${d.nombre}</td>
+      <td><span class="tag ${d.asistencia === 'si' ? 'si' : 'no'}">${d.asistencia === 'si' ? 'Asiste' : 'No asiste'}</span></td>
+      <td>${d.llevaAcompanante ? (d.nombreAcompanante || 'Sí (sin nombre)') : '—'}</td>
+      <td>${formatearFecha(d.fechaConfirmacion)}</td>
+    </tr>
+  `).join("");
+
+  wrap.innerHTML = `
+    <table class="rsvp-table">
+      <thead><tr><th>Invitado</th><th>Asistencia</th><th>Acompañante</th><th>Fecha de confirmación</th></tr></thead>
+      <tbody>${filas}</tbody>
+    </table>
+  `;
+}
+
+document.getElementById("btn-export").addEventListener("click", () => {
+  const datos = cargarConfirmaciones();
+  if (datos.length === 0) { alert("No hay datos para exportar todavía."); return; }
+  const encabezado = "Nombre,Asistencia,Acompanante,NombreAcompanante,FechaConfirmacion\n";
+  const filas = datos.map(d => [
+    d.nombre, d.asistencia, d.llevaAcompanante ? "Si" : "No", d.nombreAcompanante || "", d.fechaConfirmacion
+  ].map(v => `"${String(v).replace(/"/g,'""')}"`).join(",")).join("\n");
+  const blob = new Blob([encabezado + filas], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = "confirmaciones-karen-daniel.csv";
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+document.getElementById("btn-clear").addEventListener("click", () => {
+  if (confirm("¿Borrar todas las confirmaciones guardadas en este navegador? Esta acción no se puede deshacer.")) {
+    localStorage.removeItem(LS_KEY);
+    render();
+  }
+});
+
+render();
+</script>
+</body>
+</html>
