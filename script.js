@@ -246,12 +246,18 @@ if (!prefiereMenosMovimiento) {
 
 /* ---------------------- Invitación individual (RSVP) ---------------------- */
 const inputNombre = document.getElementById("rsvp-nombre");
+const nombreLista = document.getElementById("rsvp-nombre-list");
 const guestStatus = document.getElementById("guest-status");
 const companionBlock = document.getElementById("companion-block");
 const companionCheckbox = document.getElementById("companion-checkbox");
 const companionCheckboxLabel = document.getElementById("companion-checkbox-label");
 const companionNameField = document.getElementById("companion-name-field");
 const companionNamesContainer = document.getElementById("companion-names-container");
+const childrenBlock = document.getElementById("children-block");
+const childrenCheckbox = document.getElementById("children-checkbox");
+const childrenCheckboxLabel = document.getElementById("children-checkbox-label");
+const childrenNameField = document.getElementById("children-name-field");
+const childrenNamesContainer = document.getElementById("children-names-container");
 const rsvpForm = document.getElementById("rsvp-form");
 const rsvpSuccess = document.getElementById("rsvp-success");
 const rsvpClosed = document.getElementById("rsvp-closed");
@@ -284,13 +290,21 @@ function nombreParaSaludo(nombre){
 }
 
 function textoDetalleAcompanantes(guest){
-  if (guest.acompanantesPermitidos === 0) {
+  const adultos = guest.acompanantesPermitidos || 0;
+  const ninos = guest.ninosPermitidos || 0;
+
+  if (adultos === 0 && ninos === 0) {
     return "Tu invitación es individual — nos encantaría que seas tú quien confirme.";
   }
-  if (guest.acompanantesPermitidos === 1) {
-    return "Tu invitación incluye 1 acompañante.";
-  }
-  return `Tu invitación incluye hasta ${guest.acompanantesPermitidos} acompañantes.`;
+
+  const partes = [];
+  if (adultos === 1) partes.push("1 acompañante");
+  else if (adultos > 1) partes.push(`hasta ${adultos} acompañantes`);
+
+  if (ninos === 1) partes.push("1 niño");
+  else if (ninos > 1) partes.push(`hasta ${ninos} niños`);
+
+  return `Tu invitación incluye ${partes.join(" y ")}.`;
 }
 
 function mostrarTarjetaInvitacion(guest){
@@ -299,7 +313,7 @@ function mostrarTarjetaInvitacion(guest){
   if (inviteGreeting) inviteGreeting.textContent = `Hola, ${nombreParaSaludo(guest.nombre)}`;
   if (inviteDetail) inviteDetail.textContent = textoDetalleAcompanantes(guest);
 
-  // El/los acompañante(s) SOLO se habilitan para invitados con acompanantesPermitidos > 0
+  // El/los acompañante(s) adulto(s) SOLO se habilitan para invitados con acompanantesPermitidos > 0
   if (guest.acompanantesPermitidos > 0) {
     companionBlock.classList.add("show");
     companionCheckbox.disabled = false;
@@ -308,13 +322,31 @@ function mostrarTarjetaInvitacion(guest){
     companionCheckboxLabel.textContent = guest.acompanantesPermitidos === 1
       ? "Llevaré acompañante"
       : `Llevaré acompañante(s) (hasta ${guest.acompanantesPermitidos})`;
-    renderCamposAcompanantes(guest.acompanantesPermitidos);
+    renderCamposNombres(companionNamesContainer, "companion-name", guest.acompanantesPermitidos, "Nombre de tu acompañante", "Nombre del acompañante", guest.acompanantesNombres);
   } else {
     companionBlock.classList.remove("show");
     companionCheckbox.checked = false;
     companionCheckbox.disabled = true;
     companionNameField.classList.remove("show");
     companionNamesContainer.innerHTML = "";
+  }
+
+  // El/los niño(s) SOLO se habilitan para invitados con ninosPermitidos > 0
+  if (guest.ninosPermitidos > 0) {
+    childrenBlock.classList.add("show");
+    childrenCheckbox.disabled = false;
+    childrenCheckbox.checked = false;
+    childrenNameField.classList.remove("show");
+    childrenCheckboxLabel.textContent = guest.ninosPermitidos === 1
+      ? "Llevaré niño"
+      : `Llevaré niño(s) (hasta ${guest.ninosPermitidos})`;
+    renderCamposNombres(childrenNamesContainer, "children-name", guest.ninosPermitidos, "Nombre del niño", "Nombre del niño", guest.ninosNombres);
+  } else {
+    childrenBlock.classList.remove("show");
+    childrenCheckbox.checked = false;
+    childrenCheckbox.disabled = true;
+    childrenNameField.classList.remove("show");
+    childrenNamesContainer.innerHTML = "";
   }
 
   mostrarPaso("card");
@@ -334,9 +366,12 @@ function aplicarInvitadoDesdeEnlace(){
   mostrarTarjetaInvitacion(guest);
 }
 
-// Genera un campo de nombre por cada acompañante permitido (1, 2, 3...)
-function renderCamposAcompanantes(cantidad){
-  companionNamesContainer.innerHTML = "";
+// Genera un campo de nombre por cada acompañante o niño permitido (1, 2, 3...).
+// Se usa tanto para el bloque de acompañantes adultos como para el de niños.
+// Si ya conocemos el nombre (viene del Excel), lo dejamos precargado para
+// que el invitado NO tenga que escribirlo — solo confirma o corrige si hace falta.
+function renderCamposNombres(contenedor, idPrefix, cantidad, etiquetaSingular, etiquetaPlural, nombresConocidos){
+  contenedor.innerHTML = "";
   for (let i = 1; i <= cantidad; i++) {
     const wrap = document.createElement("div");
     wrap.className = "field";
@@ -344,23 +379,83 @@ function renderCamposAcompanantes(cantidad){
     wrap.style.marginBottom = "0";
 
     const label = document.createElement("label");
-    label.setAttribute("for", `companion-name-${i}`);
-    label.textContent = cantidad === 1 ? "Nombre de tu acompañante" : `Nombre del acompañante ${i}`;
+    label.setAttribute("for", `${idPrefix}-${i}`);
+    label.textContent = cantidad === 1 ? etiquetaSingular : `${etiquetaPlural} ${i}`;
 
     const input = document.createElement("input");
     input.type = "text";
-    input.id = `companion-name-${i}`;
+    input.id = `${idPrefix}-${i}`;
     input.className = "companion-name-input";
     input.placeholder = "Nombre completo";
+    const conocido = nombresConocidos && nombresConocidos[i - 1];
+    if (conocido) input.value = conocido;
 
     wrap.appendChild(label);
     wrap.appendChild(input);
-    companionNamesContainer.appendChild(wrap);
+    contenedor.appendChild(wrap);
   }
+}
+
+/* ---------------------- Buscador inteligente (autocompletar) ----------------------
+ * A medida que la persona escribe, se muestran los nombres de la lista que
+ * contienen ese texto (sin importar tildes/mayúsculas), para que elija el
+ * suyo con un clic en vez de tener que escribirlo completo y exacto.
+ */
+const MAX_SUGERENCIAS = 6;
+
+function cerrarSugerencias(){
+  if (!nombreLista) return;
+  nombreLista.classList.remove("open");
+  nombreLista.innerHTML = "";
+}
+
+function mostrarSugerencias(texto){
+  if (!nombreLista) return;
+  const consulta = normalizar(texto);
+  if (!consulta) { cerrarSugerencias(); return; }
+
+  const coincidencias = GUEST_LIST
+    .filter((g) => normalizar(g.nombre).includes(consulta))
+    .slice(0, MAX_SUGERENCIAS);
+
+  if (coincidencias.length === 0) { cerrarSugerencias(); return; }
+
+  nombreLista.innerHTML = "";
+  coincidencias.forEach((g) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.textContent = g.nombre;
+    btn.addEventListener("click", () => {
+      inputNombre.value = g.nombre;
+      cerrarSugerencias();
+      guestStatus.classList.remove("show", "not-found");
+      mostrarTarjetaInvitacion(g);
+    });
+    nombreLista.appendChild(btn);
+  });
+  nombreLista.classList.add("open");
+}
+
+if (inputNombre) {
+  inputNombre.addEventListener("input", () => mostrarSugerencias(inputNombre.value));
+  inputNombre.addEventListener("focus", () => mostrarSugerencias(inputNombre.value));
+
+  // Cierra la lista al hacer clic fuera (con un pequeño retraso para que el
+  // clic sobre una sugerencia alcance a dispararse primero).
+  document.addEventListener("pointerdown", (e) => {
+    if (nombreLista && !nombreLista.contains(e.target) && e.target !== inputNombre) {
+      cerrarSugerencias();
+    }
+  });
+
+  inputNombre.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") cerrarSugerencias();
+  });
 }
 
 if (btnBuscarInvitacion) {
   btnBuscarInvitacion.addEventListener("click", () => {
+    cerrarSugerencias();
     const valor = inputNombre.value;
     const match = GUEST_LIST.find((g) => normalizar(g.nombre) === normalizar(valor));
 
@@ -402,6 +497,7 @@ if (btnCambiarInvitado) {
     invitadoSeleccionado = null;
     inputNombre.value = "";
     guestStatus.classList.remove("show", "not-found");
+    cerrarSugerencias();
     mostrarPaso("lookup");
   });
 }
@@ -409,6 +505,12 @@ if (btnCambiarInvitado) {
 if (companionCheckbox) {
   companionCheckbox.addEventListener("change", () => {
     companionNameField.classList.toggle("show", companionCheckbox.checked);
+  });
+}
+
+if (childrenCheckbox) {
+  childrenCheckbox.addEventListener("change", () => {
+    childrenNameField.classList.toggle("show", childrenCheckbox.checked);
   });
 }
 
@@ -439,12 +541,21 @@ if (rsvpForm) {
           .filter((nombre) => nombre !== "")
       : [];
 
+    const nombresNinos = childrenCheckbox.checked
+      ? Array.from(childrenNamesContainer.querySelectorAll(".companion-name-input"))
+          .map((input) => input.value.trim())
+          .filter((nombre) => nombre !== "")
+      : [];
+
     const registro = {
       nombre: invitadoSeleccionado.nombre,
       asistencia: asistenciaEl.value, // "si" | "no"
       llevaAcompanante: companionCheckbox.checked && nombresAcompanantes.length > 0,
       nombreAcompanante: nombresAcompanantes.join(", "),
       nombresAcompanantes: nombresAcompanantes,
+      llevaNino: childrenCheckbox.checked && nombresNinos.length > 0,
+      nombreNino: nombresNinos.join(", "),
+      nombresNinos: nombresNinos,
       fechaConfirmacion: new Date().toISOString(),
     };
 

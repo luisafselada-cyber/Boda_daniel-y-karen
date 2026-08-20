@@ -34,6 +34,7 @@
     <span class="eyebrow">Nos casamos</span>
     <h1 class="hero-names">Karen<span class="amp">&amp;</span>Daniel</h1>
     <p class="hero-sub">14 · Noviembre · 2026</p>
+    <p class="hero-message">Lo que empezó hace 10 años,<br>hoy se convierte en para siempre.</p>
 
     <div class="countdown" role="timer" aria-label="Tiempo restante para la boda">
       <div class="unit"><div class="num" id="cd-dias">00</div><div class="label">Días</div></div>
@@ -95,7 +96,7 @@
       </div>
       <div class="capsule-place">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" aria-hidden="true"><path d="M12 21s7-6.6 7-11.5A7 7 0 0 0 5 9.5C5 14.4 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
-        <span>Hostal Joshe · Cali, Valle del Cauca</span>
+        <span>Hostal Joshe · Santa elena, Valle del Cauca</span>
       </div>
       <div class="capsule-map">
         <iframe src="https://www.google.com/maps?q=3.6602861,-76.2479446&z=17&output=embed" title="Ubicación — Hostal Joshe" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
@@ -124,7 +125,7 @@
       <div class="timeline-item">
         <span class="t">3:30 p.m.</span>
         <div class="dot"></div>
-        <div><h4>Recepción de invitados</h4><p>Te esperamos con un cóctel de bienvenida.</p></div>
+        <div><h4>Recepción de invitados</h4></div>
       </div>
       <div class="timeline-item">
         <span class="t">4:00 p.m.</span>
@@ -134,7 +135,7 @@
       <div class="timeline-item">
         <span class="t">5:00 p.m.</span>
         <div class="dot"></div>
-        <div><h4>Sesión de fotos &amp; cóctel</h4><p>Fotografías y un brindis de bienvenida.</p></div>
+        <div><h4>Sesión de fotos &amp; cóctel</h4></div>
       </div>
       <div class="timeline-item">
         <span class="t">6:00 p.m.</span>
@@ -282,6 +283,7 @@
       <p class="invite-lookup-text">Esta invitación es personal. Escribe tu nombre exactamente como aparece en ella para abrirla.</p>
       <div class="field" style="margin-bottom:14px;">
         <input type="text" id="rsvp-nombre" placeholder="Tu nombre completo" autocomplete="off">
+        <div class="autocomplete-list" id="rsvp-nombre-list"></div>
       </div>
       <button type="button" class="btn btn--gold btn--full" id="btn-buscar-invitacion">Ver mi invitación</button>
       <p class="guest-status" id="guest-status" role="status"></p>
@@ -317,6 +319,16 @@
           </label>
           <div class="companion-name-field" id="companion-name-field">
             <div id="companion-names-container"></div>
+          </div>
+        </div>
+
+        <div class="field companion-block" id="children-block">
+          <label class="checkbox-row">
+            <input type="checkbox" id="children-checkbox" disabled>
+            <span id="children-checkbox-label">Llevaré niño(s)</span>
+          </label>
+          <div class="companion-name-field" id="children-name-field">
+            <div id="children-names-container"></div>
           </div>
         </div>
 
